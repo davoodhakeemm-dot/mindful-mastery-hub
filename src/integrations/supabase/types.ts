@@ -14,16 +14,281 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_key_attempts: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          success?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      course_access: {
+        Row: {
+          course_id: string
+          created_at: string
+          gmail: string
+          id: string
+          revoked: boolean
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          gmail: string
+          id?: string
+          revoked?: boolean
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          gmail?: string
+          id?: string
+          revoked?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_access_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          cover_path: string | null
+          created_at: string
+          description_en: string | null
+          description_ml: string | null
+          id: string
+          language: string
+          slug: string
+          title_en: string
+          title_ml: string
+        }
+        Insert: {
+          cover_path?: string | null
+          created_at?: string
+          description_en?: string | null
+          description_ml?: string | null
+          id?: string
+          language?: string
+          slug: string
+          title_en: string
+          title_ml: string
+        }
+        Update: {
+          cover_path?: string | null
+          created_at?: string
+          description_en?: string | null
+          description_ml?: string | null
+          id?: string
+          language?: string
+          slug?: string
+          title_en?: string
+          title_ml?: string
+        }
+        Relationships: []
+      }
+      lessons: {
+        Row: {
+          content_en: string | null
+          content_ml: string | null
+          course_id: string
+          created_at: string
+          description_en: string | null
+          description_ml: string | null
+          id: string
+          image_path: string | null
+          lesson_number: number
+          notes: string | null
+          pdf_path: string | null
+          title_en: string
+          title_ml: string | null
+          video_path: string | null
+        }
+        Insert: {
+          content_en?: string | null
+          content_ml?: string | null
+          course_id: string
+          created_at?: string
+          description_en?: string | null
+          description_ml?: string | null
+          id?: string
+          image_path?: string | null
+          lesson_number?: number
+          notes?: string | null
+          pdf_path?: string | null
+          title_en: string
+          title_ml?: string | null
+          video_path?: string | null
+        }
+        Update: {
+          content_en?: string | null
+          content_ml?: string | null
+          course_id?: string
+          created_at?: string
+          description_en?: string | null
+          description_ml?: string | null
+          id?: string
+          image_path?: string | null
+          lesson_number?: number
+          notes?: string | null
+          pdf_path?: string | null
+          title_en?: string
+          title_ml?: string | null
+          video_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          age: number | null
+          consent_accepted: boolean
+          created_at: string
+          full_name: string
+          gmail: string
+          id: string
+          last_login: string | null
+          phone: string | null
+          photo_url: string | null
+          registered_at: string
+          selected_course: string | null
+          status: Database["public"]["Enums"]["student_status"]
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          age?: number | null
+          consent_accepted?: boolean
+          created_at?: string
+          full_name: string
+          gmail: string
+          id: string
+          last_login?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          registered_at?: string
+          selected_course?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          age?: number | null
+          consent_accepted?: boolean
+          created_at?: string
+          full_name?: string
+          gmail?: string
+          id?: string
+          last_login?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          registered_at?: string
+          selected_course?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      student_progress: {
+        Row: {
+          completed: boolean
+          id: string
+          lesson_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          id?: string
+          lesson_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          id?: string
+          lesson_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_course_access: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "student"
+      student_status: "pending" | "approved" | "suspended" | "removed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +415,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "student"],
+      student_status: ["pending", "approved", "suspended", "removed"],
+    },
   },
 } as const
