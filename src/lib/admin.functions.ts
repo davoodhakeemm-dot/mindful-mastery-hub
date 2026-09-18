@@ -5,7 +5,63 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const MAX_FAILURES = 5;
 const WINDOW_MINUTES = 15;
 
+/*
+ * Owner emails always get admin access without needing the admin key.
+ * The first time an owner opens the Admin Space, they are added to
+ * user_roles as an admin automatically.
+ */
+const OWNER_EMAILS = ["davoodhakeemm@gmail.com"];
+
+async function getContextEmail(context: any): Promise<string | null> {
+  const claimEmail = context?.claims?.email;
+  if (typeof claimEmail === "string" && claimEmail.trim()) {
+    return claimEmail.trim().toLowerCase();
+  }
+
+  try {
+    const { supabaseAdmin } =
+      await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.auth.admin.getUserById(
+      context.userId,
+    );
+    const email = data?.user?.email;
+    return email ? email.trim().toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureOwnerAdmin(context: any): Promise<boolean> {
+  const email = await getContextEmail(context);
+  if (!email || !OWNER_EMAILS.includes(email)) {
+    return false;
+  }
+
+  const { supabaseAdmin } =
+    await import("@/integrations/supabase/client.server");
+
+  const { data: existing } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", context.userId)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (!existing) {
+    await supabaseAdmin.from("user_roles").insert({
+      user_id: context.userId,
+      role: "admin",
+    });
+  }
+
+  return true;
+}
+
 async function requireAdmin(context: any) {
+  if (await ensureOwnerAdmin(context)) {
+    return;
+  }
+
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
@@ -104,6 +160,12 @@ export const verifyAdminKey = createServerFn({ method: "POST" })
 export const getAdminStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    if (await ensureOwnerAdmin(context)) {
+      return {
+        isAdmin: true,
+      };
+    }
+
     const { data, error } = await context.supabase.rpc(
       "has_role",
       {

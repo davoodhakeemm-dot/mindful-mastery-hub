@@ -38,11 +38,19 @@ export function useProfile(userId?: string) {
   });
 }
 
+const OWNER_EMAILS = ["davoodhakeemm@gmail.com"];
+
 export function useIsAdmin(userId?: string) {
+  const { user } = useSession();
+  const email = user?.email?.trim().toLowerCase();
+  const isOwner = !!email && OWNER_EMAILS.includes(email);
+
   return useQuery({
-    queryKey: ["is-admin", userId],
+    queryKey: ["is-admin", userId, isOwner],
     enabled: !!userId,
     queryFn: async () => {
+      if (isOwner) return true;
+
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
