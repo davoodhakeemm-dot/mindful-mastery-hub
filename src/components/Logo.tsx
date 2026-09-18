@@ -3,9 +3,9 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  className?: string;
-  size?: number;
-  onTripleTap?: () => void;
+  className?: string | undefined;
+  size?: number | undefined;
+  onTripleTap?: (() => void) | undefined;
 };
 
 export function Logo({ className, size = 48, onTripleTap }: Props) {
