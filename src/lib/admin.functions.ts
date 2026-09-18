@@ -5,14 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const MAX_FAILURES = 5;
 const WINDOW_MINUTES = 15;
 
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
-
-async function requireAdmin(context: {
-  userId: string;
-  supabase: any;
-}) {
+async function requireAdmin(context: any) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
@@ -21,13 +14,7 @@ async function requireAdmin(context: {
   if (error || !data) {
     throw new Error("Admin access required");
   }
-
-  return true;
 }
-
-/* -------------------------------------------------------------------------- */
-/* Hidden admin access key                                                    */
-/* -------------------------------------------------------------------------- */
 
 export const verifyAdminKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -41,7 +28,7 @@ export const verifyAdminKey = createServerFn({ method: "POST" })
       await import("@/integrations/supabase/client.server");
 
     const since = new Date(
-      Date.now() - WINDOW_MINUTES * 60 * 1000,
+      Date.now() - WINDOW_MINUTES * 60 * 1000
     ).toISOString();
 
     const { count } = await supabaseAdmin
@@ -60,7 +47,6 @@ export const verifyAdminKey = createServerFn({ method: "POST" })
     }
 
     const expected = process.env["ADMIN_ACCESS_KEY"] ?? "";
-
     const ok =
       expected.length > 0 &&
       data.key.trim() === expected;
@@ -81,12 +67,13 @@ export const verifyAdminKey = createServerFn({ method: "POST" })
 
     const { count: adminCount } = await supabaseAdmin
       .from("user_roles")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
+      .select("id", { count: "exact", head: true })
       .eq("role", "admin");
 
+    /*
+     * If there are no admins yet, the first successful
+     * admin-key verification becomes the first admin.
+     */
     if ((adminCount ?? 0) === 0) {
       await supabaseAdmin.from("user_roles").insert({
         user_id: context.userId,
@@ -114,32 +101,25 @@ export const verifyAdminKey = createServerFn({ method: "POST" })
     } as const;
   });
 
-/* -------------------------------------------------------------------------- */
-/* Admin status                                                               */
-/* -------------------------------------------------------------------------- */
-
 export const getAdminStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-
-    if (error) {
-      return { isAdmin: false };
-    }
+    const { data, error } = await context.supabase.rpc(
+      "has_role",
+      {
+        _user_id: context.userId,
+        _role: "admin",
+      }
+    );
 
     return {
-      isAdmin: !!data,
+      isAdmin: !error && !!data,
     };
   });
 
-/* -------------------------------------------------------------------------- */
-/* Students                                                                   */
-/* -------------------------------------------------------------------------- */
-
-export const getAdminStudents = createServerFn({ method: "POST" })
+export const getAdminStudents = createServerFn({
+  method: "POST",
+})
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await requireAdmin(context);
@@ -149,24 +129,7 @@ export const getAdminStudents = createServerFn({ method: "POST" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select(
-        `
-        id,
-        full_name,
-        gmail,
-        age,
-        phone,
-        whatsapp,
-        address,
-        photo_url,
-        selected_course,
-        status,
-        consent_accepted,
-        registered_at,
-        created_at,
-        last_login
-        `,
-      )
+      .select("*")
       .order("registered_at", {
         ascending: false,
       });
@@ -175,32 +138,33 @@ export const getAdminStudents = createServerFn({ method: "POST" })
       throw new Error("Unable to load students");
     }
 
-    return {
-      students: data ?? [],
-    };
+    return data ?? [];
   });
 
 export const updateStudentStatus = createServerFn({
   method: "POST",
 })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    userId: string;
-    status:
-      | "pending"
-      | "approved"
-      | "suspended"
-      | "removed";
-  }) =>
-    z.object({
-      userId: z.string().uuid(),
-      status: z.enum([
-        "pending",
-        "approved",
-        "suspended",
-        "removed",
-      ]),
-    }).parse(input),
+  .inputValidator(
+    (input: {
+      userId: string;
+      status:
+        | "pending"
+        | "approved"
+        | "suspended"
+        | "removed";
+    }) =>
+      z
+        .object({
+          userId: z.string().uuid(),
+          status: z.enum([
+            "pending",
+            "approved",
+            "suspended",
+            "removed",
+          ]),
+        })
+        .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
@@ -216,17 +180,11 @@ export const updateStudentStatus = createServerFn({
       .eq("id", data.userId);
 
     if (error) {
-      throw new Error("Unable to update student status");
+      throw new Error("Unable to update student");
     }
 
-    return {
-      success: true,
-    };
+    return { ok: true };
   });
-
-/* -------------------------------------------------------------------------- */
-/* Courses                                                                    */
-/* -------------------------------------------------------------------------- */
 
 export const getAdminCourses = createServerFn({
   method: "POST",
@@ -240,19 +198,7 @@ export const getAdminCourses = createServerFn({
 
     const { data, error } = await supabaseAdmin
       .from("courses")
-      .select(
-        `
-        id,
-        slug,
-        title_en,
-        title_ml,
-        description_en,
-        description_ml,
-        language,
-        cover_path,
-        created_at
-        `,
-      )
+      .select("*")
       .order("created_at", {
         ascending: false,
       });
@@ -261,28 +207,36 @@ export const getAdminCourses = createServerFn({
       throw new Error("Unable to load courses");
     }
 
-    return {
-      courses: data ?? [],
-    };
+    return data ?? [];
   });
-
-const courseInput = z.object({
-  id: z.string().uuid().optional(),
-  slug: z.string().min(1).max(150),
-  titleEn: z.string().min(1).max(200),
-  titleMl: z.string().min(1).max(200),
-  descriptionEn: z.string().max(5000).optional(),
-  descriptionMl: z.string().max(5000).optional(),
-  language: z.string().min(1).max(50),
-  coverPath: z.string().max(500).optional(),
-});
 
 export const saveCourse = createServerFn({
   method: "POST",
 })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: z.infer<typeof courseInput>) =>
-    courseInput.parse(input),
+  .inputValidator(
+    (input: {
+      id?: string;
+      title_en: string;
+      title_ml: string;
+      slug: string;
+      language: string;
+      description_en?: string;
+      description_ml?: string;
+      cover_path?: string;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid().optional(),
+          title_en: z.string().min(1).max(200),
+          title_ml: z.string().max(200),
+          slug: z.string().min(1).max(200),
+          language: z.string().min(1).max(50),
+          description_en: z.string().max(5000).optional(),
+          description_ml: z.string().max(5000).optional(),
+          cover_path: z.string().max(500).optional(),
+        })
+        .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
@@ -291,13 +245,13 @@ export const saveCourse = createServerFn({
       await import("@/integrations/supabase/client.server");
 
     const payload = {
+      title_en: data.title_en,
+      title_ml: data.title_ml,
       slug: data.slug,
-      title_en: data.titleEn,
-      title_ml: data.titleMl,
-      description_en: data.descriptionEn || null,
-      description_ml: data.descriptionMl || null,
       language: data.language,
-      cover_path: data.coverPath || null,
+      description_en: data.description_en || null,
+      description_ml: data.description_ml || null,
+      cover_path: data.cover_path || null,
     };
 
     if (data.id) {
@@ -310,10 +264,7 @@ export const saveCourse = createServerFn({
         throw new Error("Unable to update course");
       }
 
-      return {
-        success: true,
-        id: data.id,
-      };
+      return { ok: true, id: data.id };
     }
 
     const { data: created, error } =
@@ -323,12 +274,12 @@ export const saveCourse = createServerFn({
         .select("id")
         .single();
 
-    if (error) {
+    if (error || !created) {
       throw new Error("Unable to create course");
     }
 
     return {
-      success: true,
+      ok: true,
       id: created.id,
     };
   });
@@ -338,9 +289,11 @@ export const deleteCourse = createServerFn({
 })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { courseId: string }) =>
-    z.object({
-      courseId: z.string().uuid(),
-    }).parse(input),
+    z
+      .object({
+        courseId: z.string().uuid(),
+      })
+      .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
@@ -348,30 +301,15 @@ export const deleteCourse = createServerFn({
     const { supabaseAdmin } =
       await import("@/integrations/supabase/client.server");
 
-    /*
-     * Delete dependent records first because lessons and
-     * course_access reference courses.
-     */
+    await supabaseAdmin
+      .from("course_access")
+      .delete()
+      .eq("course_id", data.courseId);
 
-    const { error: lessonError } =
-      await supabaseAdmin
-        .from("lessons")
-        .delete()
-        .eq("course_id", data.courseId);
-
-    if (lessonError) {
-      throw new Error("Unable to delete course lessons");
-    }
-
-    const { error: accessError } =
-      await supabaseAdmin
-        .from("course_access")
-        .delete()
-        .eq("course_id", data.courseId);
-
-    if (accessError) {
-      throw new Error("Unable to delete course access records");
-    }
+    await supabaseAdmin
+      .from("lessons")
+      .delete()
+      .eq("course_id", data.courseId);
 
     const { error } = await supabaseAdmin
       .from("courses")
@@ -382,14 +320,8 @@ export const deleteCourse = createServerFn({
       throw new Error("Unable to delete course");
     }
 
-    return {
-      success: true,
-    };
+    return { ok: true };
   });
-
-/* -------------------------------------------------------------------------- */
-/* Lessons                                                                    */
-/* -------------------------------------------------------------------------- */
 
 export const getAdminLessons = createServerFn({
   method: "POST",
@@ -403,24 +335,7 @@ export const getAdminLessons = createServerFn({
 
     const { data, error } = await supabaseAdmin
       .from("lessons")
-      .select(
-        `
-        id,
-        course_id,
-        lesson_number,
-        title_en,
-        title_ml,
-        description_en,
-        description_ml,
-        content_en,
-        content_ml,
-        notes,
-        video_path,
-        pdf_path,
-        image_path,
-        created_at
-        `,
-      )
+      .select("*")
       .order("lesson_number", {
         ascending: true,
       });
@@ -429,33 +344,46 @@ export const getAdminLessons = createServerFn({
       throw new Error("Unable to load lessons");
     }
 
-    return {
-      lessons: data ?? [],
-    };
+    return data ?? [];
   });
-
-const lessonInput = z.object({
-  id: z.string().uuid().optional(),
-  courseId: z.string().uuid(),
-  lessonNumber: z.number().int().min(1),
-  titleEn: z.string().min(1).max(300),
-  titleMl: z.string().max(300).optional(),
-  descriptionEn: z.string().max(5000).optional(),
-  descriptionMl: z.string().max(5000).optional(),
-  contentEn: z.string().optional(),
-  contentMl: z.string().optional(),
-  notes: z.string().optional(),
-  videoPath: z.string().max(500).optional(),
-  pdfPath: z.string().max(500).optional(),
-  imagePath: z.string().max(500).optional(),
-});
 
 export const saveLesson = createServerFn({
   method: "POST",
 })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: z.infer<typeof lessonInput>) =>
-    lessonInput.parse(input),
+  .inputValidator(
+    (input: {
+      id?: string;
+      course_id: string;
+      lesson_number: number;
+      title_en: string;
+      title_ml?: string;
+      description_en?: string;
+      description_ml?: string;
+      content_en?: string;
+      content_ml?: string;
+      notes?: string;
+      video_path?: string;
+      pdf_path?: string;
+      image_path?: string;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid().optional(),
+          course_id: z.string().uuid(),
+          lesson_number: z.number().int().min(1),
+          title_en: z.string().min(1).max(200),
+          title_ml: z.string().max(200).optional(),
+          description_en: z.string().max(5000).optional(),
+          description_ml: z.string().max(5000).optional(),
+          content_en: z.string().max(50000).optional(),
+          content_ml: z.string().max(50000).optional(),
+          notes: z.string().max(10000).optional(),
+          video_path: z.string().max(500).optional(),
+          pdf_path: z.string().max(500).optional(),
+          image_path: z.string().max(500).optional(),
+        })
+        .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
@@ -464,18 +392,18 @@ export const saveLesson = createServerFn({
       await import("@/integrations/supabase/client.server");
 
     const payload = {
-      course_id: data.courseId,
-      lesson_number: data.lessonNumber,
-      title_en: data.titleEn,
-      title_ml: data.titleMl || null,
-      description_en: data.descriptionEn || null,
-      description_ml: data.descriptionMl || null,
-      content_en: data.contentEn || null,
-      content_ml: data.contentMl || null,
+      course_id: data.course_id,
+      lesson_number: data.lesson_number,
+      title_en: data.title_en,
+      title_ml: data.title_ml || null,
+      description_en: data.description_en || null,
+      description_ml: data.description_ml || null,
+      content_en: data.content_en || null,
+      content_ml: data.content_ml || null,
       notes: data.notes || null,
-      video_path: data.videoPath || null,
-      pdf_path: data.pdfPath || null,
-      image_path: data.imagePath || null,
+      video_path: data.video_path || null,
+      pdf_path: data.pdf_path || null,
+      image_path: data.image_path || null,
     };
 
     if (data.id) {
@@ -489,7 +417,7 @@ export const saveLesson = createServerFn({
       }
 
       return {
-        success: true,
+        ok: true,
         id: data.id,
       };
     }
@@ -501,12 +429,12 @@ export const saveLesson = createServerFn({
         .select("id")
         .single();
 
-    if (error) {
+    if (error || !created) {
       throw new Error("Unable to create lesson");
     }
 
     return {
-      success: true,
+      ok: true,
       id: created.id,
     };
   });
@@ -516,15 +444,22 @@ export const deleteLesson = createServerFn({
 })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { lessonId: string }) =>
-    z.object({
-      lessonId: z.string().uuid(),
-    }).parse(input),
+    z
+      .object({
+        lessonId: z.string().uuid(),
+      })
+      .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
 
     const { supabaseAdmin } =
       await import("@/integrations/supabase/client.server");
+
+    await supabaseAdmin
+      .from("student_progress")
+      .delete()
+      .eq("lesson_id", data.lessonId);
 
     const { error } = await supabaseAdmin
       .from("lessons")
@@ -535,14 +470,8 @@ export const deleteLesson = createServerFn({
       throw new Error("Unable to delete lesson");
     }
 
-    return {
-      success: true,
-    };
+    return { ok: true };
   });
-
-/* -------------------------------------------------------------------------- */
-/* Course access                                                               */
-/* -------------------------------------------------------------------------- */
 
 export const getAdminCourseAccess = createServerFn({
   method: "POST",
@@ -556,43 +485,43 @@ export const getAdminCourseAccess = createServerFn({
 
     const { data, error } = await supabaseAdmin
       .from("course_access")
-      .select(
-        `
+      .select(`
         id,
         gmail,
         course_id,
-        revoked,
         created_at,
+        revoked,
         courses (
           title_en,
           title_ml
         )
-        `,
-      )
+      `)
       .order("created_at", {
         ascending: false,
       });
 
     if (error) {
-      throw new Error("Unable to load course access");
+      throw new Error("Unable to load access records");
     }
 
-    return {
-      access: data ?? [],
-    };
+    return data ?? [];
   });
-
-const courseAccessInput = z.object({
-  gmail: z.string().email(),
-  courseId: z.string().uuid(),
-});
 
 export const grantCourseAccess = createServerFn({
   method: "POST",
 })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: z.infer<typeof courseAccessInput>) =>
-    courseAccessInput.parse(input),
+  .inputValidator(
+    (input: {
+      gmail: string;
+      courseId: string;
+    }) =>
+      z
+        .object({
+          gmail: z.string().email(),
+          courseId: z.string().uuid(),
+        })
+        .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
@@ -600,46 +529,24 @@ export const grantCourseAccess = createServerFn({
     const { supabaseAdmin } =
       await import("@/integrations/supabase/client.server");
 
-    const { data: existing } =
-      await supabaseAdmin
-        .from("course_access")
-        .select("id")
-        .eq("gmail", data.gmail.toLowerCase())
-        .eq("course_id", data.courseId)
-        .maybeSingle();
-
-    if (existing) {
-      const { error } = await supabaseAdmin
-        .from("course_access")
-        .update({
-          revoked: false,
-        })
-        .eq("id", existing.id);
-
-      if (error) {
-        throw new Error("Unable to restore course access");
-      }
-
-      return {
-        success: true,
-      };
-    }
-
     const { error } = await supabaseAdmin
       .from("course_access")
-      .insert({
-        gmail: data.gmail.toLowerCase(),
-        course_id: data.courseId,
-        revoked: false,
-      });
+      .upsert(
+        {
+          gmail: data.gmail.trim().toLowerCase(),
+          course_id: data.courseId,
+          revoked: false,
+        },
+        {
+          onConflict: "gmail,course_id",
+        }
+      );
 
     if (error) {
       throw new Error("Unable to grant course access");
     }
 
-    return {
-      success: true,
-    };
+    return { ok: true };
   });
 
 export const revokeCourseAccess = createServerFn({
@@ -647,9 +554,11 @@ export const revokeCourseAccess = createServerFn({
 })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { accessId: string }) =>
-    z.object({
-      accessId: z.string().uuid(),
-    }).parse(input),
+    z
+      .object({
+        accessId: z.string().uuid(),
+      })
+      .parse(input)
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
@@ -665,17 +574,11 @@ export const revokeCourseAccess = createServerFn({
       .eq("id", data.accessId);
 
     if (error) {
-      throw new Error("Unable to revoke course access");
+      throw new Error("Unable to revoke access");
     }
 
-    return {
-      success: true,
-    };
+    return { ok: true };
   });
-
-/* -------------------------------------------------------------------------- */
-/* Student progress                                                           */
-/* -------------------------------------------------------------------------- */
 
 export const getAdminProgress = createServerFn({
   method: "POST",
@@ -687,32 +590,27 @@ export const getAdminProgress = createServerFn({
     const { supabaseAdmin } =
       await import("@/integrations/supabase/client.server");
 
-    const { data, error } =
-      await supabaseAdmin
-        .from("student_progress")
-        .select(
-          `
-          id,
-          user_id,
-          lesson_id,
-          completed,
-          updated_at,
-          lessons (
-            title_en,
-            title_ml,
-            course_id
-          )
-          `,
+    const { data, error } = await supabaseAdmin
+      .from("student_progress")
+      .select(`
+        id,
+        user_id,
+        lesson_id,
+        completed,
+        updated_at,
+        lessons (
+          title_en,
+          title_ml,
+          course_id
         )
-        .order("updated_at", {
-          ascending: false,
-        });
+      `)
+      .order("updated_at", {
+        ascending: false,
+      });
 
     if (error) {
-      throw new Error("Unable to load student progress");
+      throw new Error("Unable to load progress");
     }
 
-    return {
-      progress: data ?? [],
-    };
+    return data ?? [];
   });
