@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 
@@ -47,9 +46,16 @@ function AuthPage() {
   const signIn = async () => {
     setBusy(true);
     try {
-      await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      // Use Supabase's native Google OAuth. The Lovable OAuth broker
+      // (/~oauth/initiate) only works on Lovable-hosted preview zones and
+      // returns 403 anywhere else, so we go straight through Supabase.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+        },
       });
+      if (error) throw error;
     } catch {
       toast.error("Sign-in failed. Please try again.");
       setBusy(false);
