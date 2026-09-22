@@ -72,26 +72,22 @@ function Dashboard() {
 
         {approved && (
           <section className="mt-6">
-            <h2 className="font-display text-xl text-foreground">{t("myClasses")}</h2>
-            {courses && courses.length === 0 && (
-              <p className="mt-3 text-sm text-muted-foreground">{t("noAccess")}</p>
-            )}
-            <div className="mt-4 grid gap-3">
-              {courses?.map((c) => (
-                <div key={c.id} className="rounded-3xl surface-card p-5">
-                  <h3 className="font-display text-lg text-gold">
-                    {lang === "ml" ? c.title_ml : c.title_en}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {(lang === "ml" ? c.description_ml : c.description_en) ?? ""}
-                  </p>
-                  <Button asChild className="mt-4" size="sm">
-                    <Link to="/course/$courseId" params={{ courseId: c.id }}>
-                      {t("continueLearning")}
-                    </Link>
-                  </Button>
-                </div>
-              ))}
+            <div className="rounded-3xl surface-card p-6 text-center">
+              <h2 className="font-display text-xl text-foreground">{t("myClasses")}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {lang === "ml"
+                  ? "നിങ്ങളുടെ രജിസ്ട്രേഷൻ അനുമതി ലഭിച്ചു. ക്ലാസ് തുടങ്ങാം."
+                  : "Your registration is approved. You can begin the class."}
+              </p>
+              <Button asChild className="mt-5" size="lg">
+                <a
+                  href="https://drive.google.com/drive/folders/1BcEl0WYmikGLQqPPhvd0LvWpSDOnwowl"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("startLearning")}
+                </a>
+              </Button>
             </div>
           </section>
         )}

@@ -79,6 +79,8 @@ export const dict: Dict = {
   verify: { en: "Verify", ml: "പരിശോധിക്കുക" },
   registrationDate: { en: "Registration date", ml: "രജിസ്ട്രേഷൻ തീയതി" },
   status: { en: "Status", ml: "സ്ഥിതി" },
+  classPassword: { en: "Class password", ml: "ക്ലാസ് പാസ്‌വേഡ്" },
+  startLearning: { en: "Start Learning", ml: "പഠനം ആരംഭിക്കുക" },
 };
 
 export function useT() {
