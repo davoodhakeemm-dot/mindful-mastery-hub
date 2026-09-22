@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, useT } from "@/lib/i18n";
 import { useProfile, useSession } from "@/lib/useAuth";
 
@@ -19,25 +17,6 @@ function Dashboard() {
 
   const approved = profile?.status === "approved";
 
-  const { data: courses } = useQuery({
-    queryKey: ["my-courses", user?.id],
-    enabled: !!user && approved,
-    queryFn: async () => {
-      const { data: access, error } = await supabase
-        .from("course_access")
-        .select("course_id")
-        .eq("revoked", false);
-      if (error) throw error;
-      const ids = (access ?? []).map((a) => a.course_id);
-      if (ids.length === 0) return [];
-      const { data, error: cErr } = await supabase
-        .from("courses")
-        .select("id, slug, title_en, title_ml, description_en, description_ml")
-        .in("id", ids);
-      if (cErr) throw cErr;
-      return data ?? [];
-    },
-  });
 
   return (
     <div className="min-h-screen bg-background">
