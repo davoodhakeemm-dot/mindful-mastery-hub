@@ -5,6 +5,7 @@ import hero from "@/assets/hero.jpg";
 import { Logo } from "@/components/Logo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LanguageGate } from "@/components/LanguageGate";
+import { HypnoBackdrop, Reveal } from "@/components/Atmosphere";
 import { Button } from "@/components/ui/button";
 import { useLanguage, useT } from "@/lib/i18n";
 
@@ -50,6 +51,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="grain" />
       <LanguageGate />
       <SiteHeader onLogoTripleTap={() => navigate({ to: "/admin-access" })} />
 
@@ -57,19 +59,22 @@ function Index() {
         <img
           src={hero}
           alt="Calm spiral of light representing focused attention"
-          className="absolute inset-0 h-full w-full object-cover opacity-25"
+          className="absolute inset-0 h-full w-full object-cover opacity-25 animate-ken-burns"
         />
-        <div className="relative mx-auto max-w-5xl px-5 py-16 text-center">
-          <Logo size={92} className="mx-auto animate-slow-spin" />
-          <h1 className="mt-6 font-display text-4xl leading-tight text-gold sm:text-5xl">
+        <HypnoBackdrop />
+        <div className="relative mx-auto max-w-5xl px-5 py-24 text-center sm:py-32">
+          <div className="animate-float">
+            <Logo size={104} className="mx-auto animate-slow-spin drop-shadow-[0_0_30px_rgba(234,190,90,0.35)]" />
+          </div>
+          <h1 className="mt-8 animate-rise font-display text-5xl leading-tight text-shimmer sm:text-7xl">
             {t("brandTitle")}
           </h1>
-          <p className="mt-1 font-display text-xl text-foreground/90">ഹിപ്നോട്ടിസം</p>
-          <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 animate-rise font-display text-2xl text-foreground/90" style={{ animationDelay: "120ms" }}>ഹിപ്നോട്ടിസം</p>
+          <p className="mx-auto mt-5 max-w-md animate-rise text-sm leading-relaxed text-muted-foreground" style={{ animationDelay: "220ms" }}>
             {t("tagline")}
           </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Button asChild size="lg" className="w-full sm:w-auto">
+          <div className="mt-10 flex animate-rise flex-col items-center gap-3 sm:flex-row sm:justify-center" style={{ animationDelay: "320ms" }}>
+            <Button asChild size="lg" className="w-full animate-glow sm:w-auto">
               <Link to="/register">{t("joinClass")}</Link>
             </Button>
             <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
@@ -80,6 +85,7 @@ function Index() {
       </section>
 
       <main className="mx-auto max-w-3xl space-y-10 px-5 py-12">
+        <Reveal>
         <section className="rounded-3xl surface-card p-6">
           <h2 className="font-display text-2xl text-foreground">{t("introTitle")}</h2>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
@@ -95,21 +101,27 @@ function Index() {
               : "This course is educational only. It is not medical treatment or clinical hypnotherapy. For health concerns, consult a qualified professional. Nothing here is supernatural mind control."}
           </p>
         </section>
+        </Reveal>
 
         <section>
-          <h2 className="font-display text-2xl text-foreground">{t("learnTitle")}</h2>
+          <Reveal>
+            <h2 className="font-display text-2xl text-foreground">{t("learnTitle")}</h2>
+          </Reveal>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {topics.map(({ icon: Icon, en, ml }) => (
-              <div key={en} className="flex items-start gap-3 rounded-2xl surface-card p-4">
-                <Icon className="mt-0.5 size-5 shrink-0 text-primary" />
-                <span className="text-sm text-foreground/90">{lang === "ml" ? ml : en}</span>
-              </div>
+            {topics.map(({ icon: Icon, en, ml }, i) => (
+              <Reveal key={en} delay={i * 80}>
+                <div className="flex h-full items-start gap-3 rounded-2xl surface-card card-lift p-4">
+                  <Icon className="mt-0.5 size-5 shrink-0 text-primary" />
+                  <span className="text-sm text-foreground/90">{lang === "ml" ? ml : en}</span>
+                </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
+        <Reveal>
         <section className="rounded-3xl surface-card p-6 text-center">
-          <HeartHandshake className="mx-auto size-7 text-primary" />
+          <HeartHandshake className="mx-auto size-7 animate-float text-primary" />
           <h2 className="mt-3 font-display text-2xl text-foreground">{t("ethicsTitle")}</h2>
           <p className="mt-2 text-sm text-primary">{t("ethicsPillars")}</p>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
@@ -119,6 +131,9 @@ function Index() {
           </p>
         </section>
 
+        </Reveal>
+
+        <Reveal>
         <section className="rounded-3xl border border-border p-6 text-center">
           <h2 className="font-display text-xl text-foreground">{t("categories")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -130,11 +145,15 @@ function Index() {
             <Link to="/register">{t("joinClass")}</Link>
           </Button>
         </section>
+        </Reveal>
       </main>
 
       <footer className="border-t border-border px-5 py-8 text-center text-xs text-muted-foreground">
         <p>{t("privacyNotice")}</p>
         <p className="mt-2">© {new Date().getFullYear()} Hypnotism Course</p>
+        <Link to="/admin-access" className="mt-3 inline-block opacity-60 transition hover:text-primary hover:opacity-100">
+          Admin
+        </Link>
       </footer>
     </div>
   );
