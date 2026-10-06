@@ -4,12 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
 
-  beforeLoad: async ({ location }) => {
-    // Allow the Admin Access page to open before normal login.
-    if (location.pathname === "/admin-access") {
-      return;
-    }
-
+  beforeLoad: async () => {
     const {
       data: { user },
       error,

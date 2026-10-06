@@ -3,14 +3,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
-import { useIsAdmin, useSession } from "@/lib/useAuth";
+import { useEffect, useState } from "react";
+import { useSession } from "@/lib/useAuth";
+import { getAdminToken } from "@/lib/academy";
 import { useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export function SiteHeader({ onLogoTripleTap }: { onLogoTripleTap?: () => void }) {
   const t = useT();
   const { user } = useSession();
-  const { data: isAdmin } = useIsAdmin(user?.id);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => setIsAdmin(!!getAdminToken()), []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -32,13 +35,13 @@ export function SiteHeader({ onLogoTripleTap }: { onLogoTripleTap?: () => void }
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <LanguageSwitcher />
+          {isAdmin && (
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/admin">Admin</Link>
+            </Button>
+          )}
           {user ? (
             <>
-              {isAdmin && (
-                <Button asChild variant="secondary" size="sm">
-                  <Link to="/admin">Admin</Link>
-                </Button>
-              )}
               <Button asChild variant="secondary" size="sm">
                 <Link to="/dashboard">{t("myClasses")}</Link>
               </Button>
