@@ -38,6 +38,21 @@ export type Database = {
         }
         Relationships: []
       }
+      class_unlocks: {
+        Row: {
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_access: {
         Row: {
           course_id: string
@@ -122,6 +137,7 @@ export type Database = {
           title_en: string
           title_ml: string | null
           video_path: string | null
+          video_url: string | null
         }
         Insert: {
           content_en?: string | null
@@ -138,6 +154,7 @@ export type Database = {
           title_en: string
           title_ml?: string | null
           video_path?: string | null
+          video_url?: string | null
         }
         Update: {
           content_en?: string | null
@@ -154,6 +171,7 @@ export type Database = {
           title_en?: string
           title_ml?: string | null
           video_path?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -219,6 +237,7 @@ export type Database = {
       student_progress: {
         Row: {
           completed: boolean
+          completed_at: string | null
           id: string
           lesson_id: string
           updated_at: string
@@ -226,6 +245,7 @@ export type Database = {
         }
         Insert: {
           completed?: boolean
+          completed_at?: string | null
           id?: string
           lesson_id: string
           updated_at?: string
@@ -233,6 +253,7 @@ export type Database = {
         }
         Update: {
           completed?: boolean
+          completed_at?: string | null
           id?: string
           lesson_id?: string
           updated_at?: string
