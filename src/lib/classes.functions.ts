@@ -1,20 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  ADMIN_KEY,
-  JOIN_PASS_KEY,
-  REGISTRATION_CODE,
-  WAIT_MS,
-  classStates,
-} from "./class-rules";
+import { WAIT_MS, classStates } from "./class-rules";
+
+const keys = () => import("./class-keys.server");
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
 }
 
-function checkAdminKey(key: string) {
+async function checkAdminKey(key: string) {
+  const { ADMIN_KEY } = await keys();
   if (key.trim() !== ADMIN_KEY) throw new Error("Wrong admin key");
 }
 
@@ -29,11 +26,11 @@ async function sign(path: string | null, bucket = "course-media") {
 
 export const verifyPassKey = createServerFn({ method: "POST" })
   .inputValidator((i: { key: string }) => z.object({ key: z.string().max(64) }).parse(i))
-  .handler(async ({ data }) => ({ ok: data.key.trim() === JOIN_PASS_KEY }));
+  .handler(async ({ data }) => ({ ok: data.key.trim() === (await keys()).JOIN_PASS_KEY }));
 
 export const verifyAdminKeyOnly = createServerFn({ method: "POST" })
   .inputValidator((i: { key: string }) => z.object({ key: z.string().max(64) }).parse(i))
-  .handler(async ({ data }) => ({ ok: data.key.trim() === ADMIN_KEY }));
+  .handler(async ({ data }) => ({ ok: data.key.trim() === (await keys()).ADMIN_KEY }));
 
 /* ---------- Student ---------- */
 
@@ -74,7 +71,7 @@ export const unlockWithCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: { code: string }) => z.object({ code: z.string().max(100) }).parse(i))
   .handler(async ({ data, context }) => {
-    if (data.code.trim() !== REGISTRATION_CODE) return { ok: false };
+    if (data.code.trim() !== (await keys()).REGISTRATION_CODE) return { ok: false };
     const sb = await admin();
     await sb.from("class_unlocks").upsert({ user_id: context.userId });
     return { ok: true };
@@ -142,7 +139,7 @@ const keyed = z.object({ key: z.string().max(64) });
 export const adminOverview = createServerFn({ method: "POST" })
   .inputValidator((i: { key: string }) => keyed.parse(i))
   .handler(async ({ data }) => {
-    checkAdminKey(data.key);
+    await checkAdminKey(data.key);
     const sb = await admin();
     const [{ data: lessons }, { data: students }, { data: unlocks }, { data: progress }] = await Promise.all([
       sb.from("lessons").select("id, lesson_number, title_en, image_path, video_path, video_url, created_at").order("lesson_number").order("created_at"),
@@ -177,7 +174,7 @@ export const adminUploadUrl = createServerFn({ method: "POST" })
     z.object({ key: z.string().max(64), kind: z.enum(["poster", "video"]), ext: z.string().regex(/^[a-z0-9]{1,6}$/) }).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAdminKey(data.key);
+    await checkAdminKey(data.key);
     const sb = await admin();
     const path = `classes/${data.kind}/${crypto.randomUUID()}.${data.ext}`;
     const { data: up, error } = await sb.storage.from("course-media").createSignedUploadUrl(path);
@@ -199,7 +196,7 @@ export const adminCreateClass = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data }) => {
-    checkAdminKey(data.key);
+    await checkAdminKey(data.key);
     if (!data.videoPath && !data.videoUrl) throw new Error("Add a video file or link");
     const sb = await admin();
     const { data: course } = await sb.from("courses").select("id").order("created_at").limit(1).maybeSingle();
@@ -222,7 +219,7 @@ export const adminCreateClass = createServerFn({ method: "POST" })
 export const adminDeleteClass = createServerFn({ method: "POST" })
   .inputValidator((i: { key: string; id: string }) => z.object({ key: z.string().max(64), id: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
-    checkAdminKey(data.key);
+    await checkAdminKey(data.key);
     const sb = await admin();
     await sb.from("student_progress").delete().eq("lesson_id", data.id);
     await sb.from("lessons").delete().eq("id", data.id);
@@ -234,7 +231,7 @@ export const adminSetUnlock = createServerFn({ method: "POST" })
     z.object({ key: z.string().max(64), userId: z.string().uuid(), unlocked: z.boolean() }).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAdminKey(data.key);
+    await checkAdminKey(data.key);
     const sb = await admin();
     if (data.unlocked) await sb.from("class_unlocks").upsert({ user_id: data.userId });
     else await sb.from("class_unlocks").delete().eq("user_id", data.userId);
