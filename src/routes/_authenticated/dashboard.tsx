@@ -33,7 +33,7 @@ function Dashboard() {
           <div className="mt-6 rounded-3xl surface-card p-6 text-center">
             <p className="text-sm text-muted-foreground">{t("registerTitle")}</p>
             <Button asChild className="mt-4">
-              <Link to="/register">{t("joinClass")}</Link>
+              <Link to="/auth">{t("joinClass")}</Link>
             </Button>
           </div>
         )}
