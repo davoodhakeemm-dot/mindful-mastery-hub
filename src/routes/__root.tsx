@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "../lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
+import { MusicToggle } from "@/components/MusicToggle";
 
 function NotFoundComponent() {
   return (
@@ -127,6 +128,7 @@ function RootComponent() {
       <LanguageProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <MusicToggle />
         <Toaster />
       </LanguageProvider>
     </QueryClientProvider>
