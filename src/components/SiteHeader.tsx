@@ -36,7 +36,7 @@ export function SiteHeader({ onLogoTripleTap }: { onLogoTripleTap?: () => void }
             <>
               {isAdmin && (
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/admin">Admin</Link>
+                  <a href="/admin">Admin</a>
                 </Button>
               )}
               <Button asChild variant="secondary" size="sm">

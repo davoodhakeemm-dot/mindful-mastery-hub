@@ -51,7 +51,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <LanguageGate />
-      <SiteHeader onLogoTripleTap={() => navigate({ to: "/admin-access" })} />
+      <SiteHeader  />
 
       <section className="relative overflow-hidden hero-surface">
         <img
@@ -70,7 +70,7 @@ function Index() {
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link to="/register">{t("joinClass")}</Link>
+              <Link to="/auth">{t("joinClass")}</Link>
             </Button>
             <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
               <Link to="/auth">{t("login")}</Link>
@@ -127,7 +127,7 @@ function Index() {
               : "Malayalam class and English class — approved students see their class after registration."}
           </p>
           <Button asChild className="mt-5">
-            <Link to="/register">{t("joinClass")}</Link>
+            <Link to="/auth">{t("joinClass")}</Link>
           </Button>
         </section>
       </main>
