@@ -101,14 +101,16 @@ export const getClassPlayer = createServerFn({ method: "POST" })
     const sb = await admin();
     const { data: l } = await sb
       .from("lessons")
-      .select("id, title_en, description_en, image_path, video_path, video_url")
+      .select("id, title_en, title_ml, description_en, description_ml, image_path, video_path, video_url")
       .eq("id", data.id)
       .single();
     return {
       allowed: true as const,
       state: st,
       title: l?.title_en ?? "",
+      titleMl: l?.title_ml ?? l?.title_en ?? "",
       description: l?.description_en ?? "",
+      descriptionMl: l?.description_ml ?? l?.description_en ?? "",
       posterUrl: await sign(l?.image_path ?? null),
       videoUrl: l?.video_path ? await sign(l.video_path) : null,
       videoLink: l?.video_url ?? null,
@@ -235,5 +237,21 @@ export const adminSetUnlock = createServerFn({ method: "POST" })
     const sb = await admin();
     if (data.unlocked) await sb.from("class_unlocks").upsert({ user_id: data.userId });
     else await sb.from("class_unlocks").delete().eq("user_id", data.userId);
+    return { ok: true };
+  });
+
+export const adminSetStudentStatus = createServerFn({ method: "POST" })
+  .inputValidator((i: { key: string; userId: string; status: "pending" | "approved" | "suspended" | "removed" }) =>
+    z.object({
+      key: z.string().max(64),
+      userId: z.string().uuid(),
+      status: z.enum(["pending", "approved", "suspended", "removed"]),
+    }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    await checkAdminKey(data.key);
+    const sb = await admin();
+    const { error } = await sb.from("profiles").update({ status: data.status }).eq("id", data.userId);
+    if (error) throw new Error("Could not update student status");
     return { ok: true };
   });
