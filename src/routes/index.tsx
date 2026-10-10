@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Brain, Eye, HeartHandshake, MessageCircle, Scale, Sparkles, Waves } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 
 import hero from "@/assets/hero.jpg";
 import { Logo } from "@/components/Logo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LanguageGate } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
+import { KeyEntry } from "@/components/KeyEntry";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { verifyPassKey } from "@/lib/classes.functions";
 import { useLanguage, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
@@ -47,11 +53,36 @@ function Index() {
   const t = useT();
   const { lang } = useLanguage();
   const navigate = useNavigate();
+  const [joinOpen, setJoinOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
       <LanguageGate />
-      <SiteHeader  />
+      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+          <Link to="/" className="flex items-center gap-2">
+            <Logo size={34} />
+            <span className="font-display text-lg leading-none text-gold">HYPNOTISM</span>
+          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="ghost" size="icon" aria-label={lang === "ml" ? "കൂടുതൽ" : "More options"} asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <span className="inline-flex size-10 cursor-pointer items-center justify-center rounded-md hover:bg-accent">
+                    <MoreVertical className="size-5" />
+                  </span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => void navigate({ to: "/admin" })}>
+                    {lang === "ml" ? "അഡ്മിൻ നിയന്ത്രണം" : "Admin control"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </Button>
+            <LanguageSwitcher />
+          </div>
+        </div>
+      </header>
 
       <section className="relative overflow-hidden hero-surface">
         <img
@@ -68,12 +99,9 @@ function Index() {
           <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
             {t("tagline")}
           </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link to="/auth">{t("joinClass")}</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
-              <Link to="/auth">{t("login")}</Link>
+          <div className="mt-8 flex justify-center">
+            <Button size="lg" className="w-full sm:w-auto" onClick={() => setJoinOpen(true)}>
+              {lang === "ml" ? "ഇപ്പോൾ ചേരുക" : "Join Now"}
             </Button>
           </div>
         </div>
@@ -126,8 +154,8 @@ function Index() {
               ? "മലയാളം ക്ലാസ്, ഇംഗ്ലീഷ് ക്ലാസ് — രജിസ്ട്രേഷന് ശേഷം അനുമതി ലഭിക്കുന്ന ക്ലാസുകൾ കാണാം."
               : "Malayalam class and English class — approved students see their class after registration."}
           </p>
-          <Button asChild className="mt-5">
-            <Link to="/auth">{t("joinClass")}</Link>
+          <Button className="mt-5" onClick={() => setJoinOpen(true)}>
+            {lang === "ml" ? "ഇപ്പോൾ ചേരുക" : "Join Now"}
           </Button>
         </section>
       </main>
@@ -136,6 +164,25 @@ function Index() {
         <p>{t("privacyNotice")}</p>
         <p className="mt-2">© {new Date().getFullYear()} Hypnotism Course</p>
       </footer>
+
+      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+        <DialogContent className="max-w-sm border-border bg-popover">
+          <DialogTitle className="sr-only">{lang === "ml" ? "പ്രവേശന കീ" : "Join the class"}</DialogTitle>
+          <KeyEntry
+            title={lang === "ml" ? "പ്രവേശന കീ" : "Enter pass key"}
+            subtitle={lang === "ml" ? "രജിസ്ട്രേഷൻ തുടരാൻ കീ നൽകുക" : "Enter the class pass key to continue to registration."}
+            placeholder={lang === "ml" ? "പാസ് കീ" : "Pass key"}
+            buttonLabel={lang === "ml" ? "തുടരുക" : "Continue"}
+            wrongLabel={lang === "ml" ? "കീ തെറ്റാണ്" : "That pass key is incorrect."}
+            numeric
+            check={async (key) => (await verifyPassKey({ data: { key } })).ok}
+            onSuccess={() => {
+              setJoinOpen(false);
+              void navigate({ to: "/register" });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
