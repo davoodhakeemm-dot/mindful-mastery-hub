@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Brain, Eye, HeartHandshake, MessageCircle, Scale, Sparkles, Waves } from "lucide-react";
-import { MoreVertical } from "lucide-react";
+import { Brain, Eye, HeartHandshake, MessageCircle, MoreVertical, Scale, Sparkles, Waves } from "lucide-react";
 
 import hero from "@/assets/hero.jpg";
 import { Logo } from "@/components/Logo";
@@ -11,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { KeyEntry } from "@/components/KeyEntry";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { verifyPassKey } from "@/lib/classes.functions";
 import { useLanguage, useT } from "@/lib/i18n";
 
@@ -65,20 +65,18 @@ function Index() {
             <span className="font-display text-lg leading-none text-gold">HYPNOTISM</span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" size="icon" aria-label={lang === "ml" ? "കൂടുതൽ" : "More options"} asChild>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <span className="inline-flex size-10 cursor-pointer items-center justify-center rounded-md hover:bg-accent">
-                    <MoreVertical className="size-5" />
-                  </span>
-                </DropdownMenuTrigger>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={lang === "ml" ? "കൂടുതൽ" : "More options"}>
+                  <MoreVertical className="size-5" />
+                </Button>
+              </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => void navigate({ to: "/admin" })}>
                     {lang === "ml" ? "അഡ്മിൻ നിയന്ത്രണം" : "Admin control"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
-            </Button>
+            </DropdownMenu>
             <LanguageSwitcher />
           </div>
         </div>
